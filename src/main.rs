@@ -1,7 +1,10 @@
 use inline_colorization::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{self, Value};
-use std::error::Error;
+use std::{
+    error::Error,
+    time::{SystemTime, UNIX_EPOCH},
+};
 use tokio::{
     self,
     io::{self, AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
@@ -12,6 +15,13 @@ use tokio::{
 struct Server2ClientMsg {
     env: String,
     err: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Client2ServerMsg {
+    input: String,
+    user_id: i32,
+    timestamp: u128,
 }
 
 #[tokio::main]
@@ -26,35 +36,56 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Err(_) => panic!("connect to server fail"),
     };
     loop {
-        let mut buffer = vec![0; 1024];
-        let n = stream.read(&mut buffer).await?;
-        let received_raw = String::from_utf8_lossy(&buffer[..n]);
-        let received_json = serde_json::to_string(&received_raw).unwrap();
+        // let mut buffer = vec![0; 1024];
+        // let n = stream.read(&mut buffer).await?;
+        // let received_raw = String::from_utf8_lossy(&buffer[..n]);
+        // let received_json = serde_json::to_string(&received_raw).unwrap();
+
         // let temp = r#"
         //     {
         //         "env": "aaab\nbbccc",
         //         "err": "type error"
         //     }
         // "#;
-        let received: Server2ClientMsg = serde_json::from_str(&received_json).unwrap();
-        if received.err != None {
-            stdout
-                .write_all(
-                    &format!("{color_red}{}{color_reset}\n", received.err.unwrap()).as_bytes(),
-                )
-                .await
-                .expect("tokio output error");
-        }
-        stdout
-            .write_all(&format!("{}\n", received.env).as_bytes())
-            .await
-            .expect("tokio output error");
-        stdout.flush().await.unwrap();
+
+        // let received: Server2ClientMsg = serde_json::from_str(&received_json).unwrap();
+        // if received.err != None {
+        //     stdout
+        //         .write_all(
+        //             &format!("{color_red}{}{color_reset}\n", received.err.unwrap()).as_bytes(),
+        //         )
+        //         .await
+        //         .expect("tokio output error");
+        // }
+        // stdout
+        //     .write_all(&format!("{}\n", received.env).as_bytes())
+        //     .await
+        //     .expect("tokio output error");
+        // stdout.flush().await.unwrap();
         stdout
             .write_all(&format!("\n>>> ").as_bytes())
             .await
             .expect("tokio output error");
         stdout.flush().await.unwrap();
+        let mut input = String::new();
+        loop {
+            let mut line = String::new();
+            std::io::stdin().read_line(&mut line).unwrap();
+            if line.trim().is_empty() {
+                break;
+            }
+            input.push_str(&line);
+        }
+        let start = SystemTime::now();
+        let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
+        let timestamp = since_the_epoch.as_millis();
+        let send = Client2ServerMsg {
+            input: input,
+            user_id: 1145,
+            timestamp: timestamp,
+        };
+        let send_json = serde_json::to_string(&send).unwrap();
+        stream.write_all(send_json.as_bytes()).await.unwrap();
     }
     Ok(())
 }

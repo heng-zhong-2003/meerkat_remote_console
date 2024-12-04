@@ -36,10 +36,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Err(_) => panic!("connect to server fail"),
     };
     loop {
-        // let mut buffer = vec![0; 1024];
-        // let n = stream.read(&mut buffer).await?;
-        // let received_raw = String::from_utf8_lossy(&buffer[..n]);
-        // let received_json = serde_json::to_string(&received_raw).unwrap();
+        let mut buffer = vec![0; 1024];
+        let n = stream.read(&mut buffer).await?;
+        let received_raw = String::from_utf8_lossy(&buffer[..n]);
+        let received_json = serde_json::to_string(&received_raw).unwrap();
 
         // let temp = r#"
         //     {
@@ -48,20 +48,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         //     }
         // "#;
 
-        // let received: Server2ClientMsg = serde_json::from_str(&received_json).unwrap();
-        // if received.err != None {
-        //     stdout
-        //         .write_all(
-        //             &format!("{color_red}{}{color_reset}\n", received.err.unwrap()).as_bytes(),
-        //         )
-        //         .await
-        //         .expect("tokio output error");
-        // }
-        // stdout
-        //     .write_all(&format!("{}\n", received.env).as_bytes())
-        //     .await
-        //     .expect("tokio output error");
-        // stdout.flush().await.unwrap();
+        let received: Server2ClientMsg = serde_json::from_str(&received_json).unwrap();
+        if received.err != None {
+            stdout
+                .write_all(
+                    &format!("{color_red}{}{color_reset}\n", received.err.unwrap()).as_bytes(),
+                )
+                .await
+                .expect("tokio output error");
+        }
+        stdout
+            .write_all(&format!("{}\n", received.env).as_bytes())
+            .await
+            .expect("tokio output error");
+        stdout.flush().await.unwrap();
         stdout
             .write_all(&format!("\n>>> ").as_bytes())
             .await

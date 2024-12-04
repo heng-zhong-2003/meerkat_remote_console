@@ -24,6 +24,13 @@ struct Client2ServerMsg {
     timestamp: u128,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct ClientInitMsg {
+    user_id: i32,
+}
+
+static USER_ID: i32 = 1145;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     println!("Input Meerkat server address with port: ");
@@ -35,6 +42,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Ok(s) => s,
         Err(_) => panic!("connect to server fail"),
     };
+    let init_msg = ClientInitMsg { user_id: USER_ID };
+    let init_msg_json = serde_json::to_string(&init_msg).unwrap();
+    stream.write_all(init_msg_json.as_bytes()).await.unwrap();
     loop {
         let mut buffer = vec![0; 1024];
         let n = stream.read(&mut buffer).await?;
@@ -81,7 +91,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let timestamp = since_the_epoch.as_millis();
         let send = Client2ServerMsg {
             input: input,
-            user_id: 1145,
+            user_id: USER_ID,
             timestamp: timestamp,
         };
         let send_json = serde_json::to_string(&send).unwrap();

@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+serde = { version = "1.0.215", features = ["derive"] }
 inline_colorization = "0.1.5"
 tokio = { version = "1", features = ["full"] }
 json = "0.12.4"
+serde_json = "1.0.133"
